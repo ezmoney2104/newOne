@@ -1,0 +1,184 @@
+/**
+ * Set Api Base Url
+ * @return {String}
+ */
+function getApiBaseUrl() {
+  const env = process.env.NODE_ENV
+  if (env === 'development') {
+    return 'http://localhost:5000'
+  }
+
+  const url = window.location.origin + '/'
+  return url
+}
+
+const API_BASE_URL = getApiBaseUrl()
+export { API_BASE_URL }
+-------------------------
+import axios from 'axios'
+import { API_BASE_URL } from '@/enviroment'
+
+/**
+ * Initialization of all API Requests.
+ */
+export class FetchAPI {
+  /**
+   * Send get request
+   * @param {String} uri - uri of the database
+   * @param {*} id
+   * @param {Object} obj - check for the new reference
+   * @return {Object} response.data - the response from the backend
+   */
+  async get(uri, obj = {}) {
+    let response
+    try {
+      response = await axios.get(API_BASE_URL + uri, obj)
+    } catch (error) {
+      response = {
+        data: {
+          success: false,
+          message_response: error.message,
+          message_content: error.message
+        }
+      }
+    }
+    return response.data
+  }
+  /**
+   * Send put request
+   * @param {String} uri - uri of the database
+   * @param {String} data - data to be updated to the database
+   * @param{Number} good - non defective product
+   * @return {Object} response.data - the response from the backend
+   */
+  async put(uri, data) {
+    let response
+    try {
+      response = await axios.put(API_BASE_URL + uri, {
+        params: data
+      })
+    } catch (error) {
+      response = {
+        data: {
+          success: false,
+          message_response: error.message,
+          message_content: error.message
+        }
+      }
+    }
+    return response.data
+  }
+  /**
+   * Send put request
+   * @param {String} uri - uri of the database
+   * @param {String} data - data to be posted to the database
+   * @return {Object} response.data - the response from the backend
+   */
+  async post(uri, data) {
+    let response
+    try {
+      response = await axios.post(API_BASE_URL + uri, {
+        params: data
+      })
+    } catch (error) {
+      response = {
+        data: {
+          success: false,
+          message_response: error.message,
+          message_content: error.message
+        }
+      }
+    }
+    return response.data
+  }
+  /**
+   * Send put request
+   * @param {String} uri - uri of the database
+   * @param {Object} data - id to be reffered to the database
+   * @return {Object} response.data - the response from the backend
+   */
+  async delete(uri, data) {
+    let response
+    try {
+      response = await axios.delete(API_BASE_URL + uri, {
+        params: data
+      })
+      return response
+    } catch (error) {
+      response = {
+        data: {
+          success: false,
+          message_response: error.message,
+          message_content: error.message
+        }
+      }
+    }
+    return response.data
+  }
+}
+--------------------------------
+
+import { shallowMount } from '@vue/test-utils'
+import RealTimeAndon from '@/components/RealTimeAndon.vue'
+import FetchAPI from '@/utility/apiRequest' // Mock FetchAPI
+
+jest.mock('@/utility/apiRequest', () => {
+  return jest.fn().mockImplementation(() => ({
+    post: jest.fn(() => Promise.resolve({ success: true })),
+    get: jest.fn(() => Promise.resolve({ success: true, data: [] })),
+    delete: jest.fn(() => Promise.resolve({ success: true })),
+    put: jest.fn(() => Promise.resolve({ success: true, message_content: 'Updated successfully' })),
+  }))
+})
+
+describe('Testing RealTimeAndon.vue', () => {
+  const wrapper = shallowMount(RealTimeAndon, {
+    global: {
+      components: {
+        VAppBar: 'v-app-bar',
+        VSheet: 'v-sheet',
+        VCol: 'v-col',
+        VRow: 'v-row',
+        VMain: 'v-main',
+        VLayout: 'v-layout',
+        NavBarComponent: 'NavBarComponent',
+        LineChartAndIndicator: 'line-chart-and-indicator',
+      },
+    },
+  })
+
+  test('Test if wrapper exist', () => {
+    expect(wrapper.exists()).toBeTruthy()
+  })
+
+  test('should fetch an image and set imageUrl', () => {
+    const mockBlob = new Blob(['image content'], { type: 'image/png' })
+    const mockApi = new FetchAPI()
+    mockApi.get.mockResolvedValue(mockBlob)
+
+    const mockCreateObjectURL = jest
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:http://localhost/image-url')
+
+    wrapper.vm.fetchImage()
+
+    expect(mockApi.get).toHaveBeenCalledWith('/assets/images/line_chart.png', {
+      responseType: 'blob',
+    })
+    expect(wrapper.vm.imageUrl).toBe('blob:http://localhost/image-url')
+
+    mockCreateObjectURL.mockRestore()
+  })
+})
+
+-----
+yntaxError: Cannot use import statement outside a module
+
+    > 1 | import axios from 'axios'
+        | ^
+      2 | import { API_BASE_URL } from '@/enviroment'
+      3 |
+      4 | /**
+
+------
+ Cannot spy the createObjectURL property because it is not a function; undefined given instead
