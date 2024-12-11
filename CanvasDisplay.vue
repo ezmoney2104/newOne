@@ -118,3 +118,166 @@ export default {
   },
 }
 </script>
+
+// CanvasDisplay.spec.js
+
+import { shallowMount } from '@vue/test-utils'
+import CanvasDisplay from '@/components/CanvasDisplay.vue'
+import { FetchAPI } from '@/utils/apiRequest'
+
+jest.mock('@/utils/apiRequest', () => ({
+  FetchAPI: jest.fn().mockImplementation(() => ({
+    get: jest.fn(),
+  })),
+}))
+
+describe('CanvasDisplay.vue', () => {
+  let wrapper
+  let fetchApiMock
+
+  beforeEach(() => {
+    fetchApiMock = new FetchAPI()
+    wrapper = shallowMount(CanvasDisplay, {
+      mocks: {
+        $refs: {
+          myCanvas: document.createElement('canvas'),
+        },
+      },
+    })
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+    wrapper.unmount()
+  })
+
+  it('should call fetchImage and fetchData on mount', () => {
+    const fetchImageSpy = jest.spyOn(wrapper.vm, 'fetchImage')
+    const fetchDataSpy = jest.spyOn(wrapper.vm, 'fetchData')
+
+    wrapper.vm.$options.mounted[0].call(wrapper.vm) // Call the mounted hook
+
+    expect(fetchImageSpy).toHaveBeenCalled()
+    expect(fetchDataSpy).toHaveBeenCalled()
+  })
+
+  it('should call fetchAPI and generateCanvas when fetchImage is successful', async () => {
+    const mockBlob = new Blob(['image data'], { type: 'image/png' })
+    const mockObjectURL = 'blob:http://localhost/image'
+
+    global.URL.createObjectURL = jest.fn(() => mockObjectURL)
+    fetchApiMock.get.mockResolvedValueOnce(mockBlob)
+
+    await wrapper.vm.fetchImage()
+
+    expect(fetchApiMock.get).toHaveBeenCalledWith('/api/yellow-line/image/lane.png', { responseType: 'blob' })
+    expect(global.URL.createObjectURL).toHaveBeenCalledWith(mockBlob)
+    expect(wrapper.vm.generateCanvas).toHaveBeenCalledWith(mockObjectURL)
+  })
+
+  it('should log an error if fetchImage fails', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const mockError = new Error('Fetch failed')
+    fetchApiMock.get.mockRejectedValueOnce(mockError)
+
+    await wrapper.vm.fetchImage()
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching the image:', mockError)
+
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('should call fetchAPI and update processData when fetchData is successful', async () => {
+    const mockResponse = {
+      data: [
+        { id: 1, x_coord: 10, y_coord: 20, width: 50, height: 60, product_num: 1 },
+        { id: 2, x_coord: 30, y_coord: 40, width: 70, height: 80, product_num: 2 },
+      ],
+    }
+    fetchApiMock.get.mockResolvedValueOnce(mockResponse)
+
+    await wrapper.vm.fetchData()
+
+    expect(fetchApiMock.get).toHaveBeenCalledWith('/api/process')
+    expect(wrapper.vm.processData).toEqual([
+      { id: 1, x: 10, y: 20, width: 50, height: 60, productNum: 1 },
+      { id: 2, x: 30, y: 40, width: 70, height: 80, productNum: 2 },
+    ])
+  })
+
+  it('should call setColor correctly based on productNum', () => {
+    expect(wrapper.vm.setColor(1)).toBe('green')
+    expect(wrapper.vm.setColor(2)).toBe('red')
+    expect(wrapper.vm.setColor(3)).toBeUndefined() // Default case
+  })
+
+  it('should draw image and process rectangles on the canvas when image is loaded', () => {
+    const mockCtx = {
+      drawImage: jest.fn(),
+      beginPath: jest.fn(),
+      arc: jest.fn(),
+      closePath: jest.fn(),
+      fill: jest.fn(),
+      stroke: jest.fn(),
+      fillRect: jest.fn(),
+      strokeRect: jest.fn(),
+      font: '',
+      textAlign: '',
+      textBaseline: '',
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 0,
+      fillText: jest.fn(),
+    }
+
+    const canvas = wrapper.vm.$refs.myCanvas
+    const mockImage = new Image()
+    jest.spyOn(canvas, 'getContext').mockReturnValue(mockCtx)
+    wrapper.vm.processData = [
+      { id: 1, x: 10, y: 20, width: 50, height: 60, productNum: 1 },
+    ]
+
+    wrapper.vm.generateCanvas('mockImageUrl')
+    mockImage.onload()
+
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(mockImage, 0, 0, canvas.width, canvas.height)
+    expect(mockCtx.fillRect).toHaveBeenCalledWith(10, 20, 50, 60)
+    expect(mockCtx.strokeRect).toHaveBeenCalledWith(10, 20, 50, 60)
+    expect(mockCtx.fillText).toHaveBeenCalledWith('1', 35, 50)
+  })
+
+  it('should style labels correctly on the canvas', () => {
+    const mockCtx = {
+      beginPath: jest.fn(),
+      arc: jest.fn(),
+      closePath: jest.fn(),
+      fill: jest.fn(),
+      stroke: jest.fn(),
+      font: '',
+      textAlign: '',
+      textBaseline: '',
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 0,
+      fillText: jest.fn(),
+    }
+
+    const styleLabel = wrapper.vm.generateCanvas.toString().match(/styleLabel\(.*?\) {/)[0]
+    expect(styleLabel).toBeTruthy()
+
+    const x = 100, y = 150, radius = 15, label = '1', fillStyle = 'transparent', strokeStyle = 'white'
+
+    eval(`(${styleLabel})(mockCtx, x, y, radius, label, fillStyle, strokeStyle)`)
+
+    expect(mockCtx.beginPath).toHaveBeenCalled()
+    expect(mockCtx.arc).toHaveBeenCalledWith(x, y, radius, 0, Math.PI * 2)
+    expect(mockCtx.closePath).toHaveBeenCalled()
+    expect(mockCtx.fillStyle).toBe(fillStyle)
+    expect(mockCtx.fill).toHaveBeenCalled()
+    expect(mockCtx.strokeStyle).toBe(strokeStyle)
+    expect(mockCtx.lineWidth).toBe(3)
+    expect(mockCtx.stroke).toHaveBeenCalled()
+    expect(mockCtx.fillText).toHaveBeenCalledWith(label, x, y)
+  })
+})
+
