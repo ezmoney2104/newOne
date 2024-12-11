@@ -1,0 +1,37 @@
+from src.setup_db_example.models.m_operation_information import OperationInformationDb
+from src.setup_db_example.schemas.s_operation_information import OperationInformationSchema
+from src.setup_db_example.database import db
+from flask import Blueprint
+from pprint import pprint
+import traceback
+
+operation_information_router = Blueprint("a_operation_", __name__)
+
+@operation_information_router.route("/api/get-coordinates", methods=["GET"])
+def get_coordinates():
+    """Fetch all the coordinates
+
+    Returns:
+        dict: return the api response
+    """   
+
+    process = OperationInformationDb.query.all()
+    schema = OperationInformationSchema(many=True).dump(process)
+    operation_data = []
+    for data in process:
+        operation_data_dict = {
+            "process_id": data.process_id,
+            "operation_status": data.operation_status,
+            "x": data.coordinates.x_position,
+            "y": data.coordinates.y_position,
+            "width": data.coordinates.width,
+            "height": data.coordinates.height,
+        }
+            
+        operation_data.append(operation_data_dict)
+    return{
+        "success": True,
+        "message_response": "COORDINATES FETCHED SUCCESSFULLY",
+        "message_content": "COORDINATES fetched successfully",
+        "data": operation_data
+        }, 200
