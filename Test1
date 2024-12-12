@@ -141,3 +141,60 @@ describe('CanvasDisplay.vue', () => {
     expect(wrapper.props('processArray')).toEqual(mockProcessArray)
   })
 })
+
+
+----
+
+
+it('generates the canvas correctly', async () => {
+  const image = new Image();
+  image.src = 'image-url';
+  image.onload = jest.fn();
+
+  const ctx = {
+    drawImage: jest.fn(),
+    fillStyle: '',
+    fillRect: jest.fn(),
+    strokeStyle: '',
+    strokeRect: jest.fn(),
+    font: '',
+    textAlign: '',
+    textBaseline: '',
+    fillText: jest.fn(),
+  };
+
+  wrapper.vm.ctx = ctx;
+  wrapper.vm.canvas = {
+    width: 450,
+    height: 750,
+  };
+
+  await wrapper.vm.generateCanvas('image-url');
+
+  expect(wrapper.vm.initiateCanvas).toHaveBeenCalledTimes(1);
+  expect(ctx.drawImage).toHaveBeenCalledTimes(1);
+  expect(ctx.drawImage).toHaveBeenCalledWith(image, 0, 0, 450, 750);
+
+  // Test drawing rectangles for each process in the processArray
+  expect(ctx.fillStyle).toHaveBeenCalledTimes(3);
+  expect(ctx.fillRect).toHaveBeenCalledTimes(3);
+  expect(ctx.strokeStyle).toHaveBeenCalledTimes(3);
+  expect(ctx.strokeRect).toHaveBeenCalledTimes(3);
+
+  // Test drawing labels for each process in the processArray
+  expect(ctx.font).toHaveBeenCalledTimes(3);
+  expect(ctx.textAlign).toHaveBeenCalledTimes(3);
+  expect(ctx.textBaseline).toHaveBeenCalledTimes(3);
+  expect(ctx.fillText).toHaveBeenCalledTimes(3);
+
+  // Test the styleLabel function
+  const styleLabelSpy = jest.spyOn(wrapper.vm, 'styleLabel');
+  expect(styleLabelSpy).toHaveBeenCalledTimes(3);
+
+  // Test the setColor function
+  const setColorSpy = jest.spyOn(wrapper.vm, 'setColor');
+  expect(setColorSpy).toHaveBeenCalledTimes(3);
+});
+
+
+
