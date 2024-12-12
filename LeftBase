@@ -1,0 +1,45 @@
+<template>
+  <v-main>
+    <indicator></indicator>
+    <canvas-display :process-array="processData"></canvas-display>
+  </v-main>
+</template>
+
+<script>
+import Indicator from './Indicator.vue'
+import CanvasDisplay from './CanvasDisplay.vue'
+import { FetchAPI } from '@/utils/apiRequest'
+
+export default {
+  name: 'HomeView',
+  components: { Indicator, CanvasDisplay },
+  data() {
+    return {
+      processData: [],
+    }
+  },
+  mounted() {
+    this.fetchData()
+  },
+  methods: {
+    /**
+     * Fetch the process data from the database
+     */
+    async fetchData() {
+      const fetchApi = new FetchAPI()
+      const res = await fetchApi.get('/api/process')
+      for (const data of res.data) {
+        const obj = {
+          id: data.id,
+          x: data.x_coord,
+          y: data.y_coord,
+          width: data.width,
+          height: data.height,
+          productNum: data.product_num,
+        }
+        this.processData.push(obj)
+      }
+    },
+  },
+}
+</script>
