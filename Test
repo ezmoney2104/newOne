@@ -1,0 +1,105 @@
+import { shallowMount } from '@vue/test-utils';
+import CanvasDisplay from './CanvasDisplay.vue';
+import FetchAPI from '@/utils/apiRequest';
+
+jest.mock('@/utils/apiRequest', () => ({
+  FetchAPI: jest.fn(() => ({
+    get: jest.fn(() => Promise.resolve({ data: [] })),
+  })),
+}));
+
+describe('CanvasDisplay.vue', () => {
+  let wrapper;
+
+  beforeEach(() => {
+    wrapper = shallowMount(CanvasDisplay);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('renders the canvas element', () => {
+    expect(wrapper.find('canvas').exists()).toBe(true);
+  });
+
+  it('calls fetchImage and fetchData on mount', async () => {
+    const fetchImageSpy = jest.spyOn(CanvasDisplay.methods, 'fetchImage');
+    const fetchDataSpy = jest.spyOn(CanvasDisplay.methods, 'fetchData');
+
+    await wrapper.vm.$nextTick();
+
+    expect(fetchImageSpy).toHaveBeenCalledTimes(1);
+    expect(fetchDataSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('fetchImage fetches the image from the backend', async () => {
+    const fetchApi = new FetchAPI();
+    const getSpy = jest.spyOn(fetchApi, 'get');
+
+    await wrapper.vm.fetchImage();
+
+    expect(getSpy).toHaveBeenCalledTimes(1);
+    expect(getSpy).toHaveBeenCalledWith('/api/yellow-line/image/lane.png', {
+      responseType: 'blob',
+    });
+  });
+
+  it('fetchData fetches the process data from the backend', async () => {
+    const fetchApi = new FetchAPI();
+    const getSpy = jest.spyOn(fetchApi, 'get');
+
+    await wrapper.vm.fetchData();
+
+    expect(getSpy).toHaveBeenCalledTimes(1);
+    expect(getSpy).toHaveBeenCalledWith('/api/process');
+  });
+
+  it('generateCanvas generates the canvas using the image URL', async () => {
+    const generateCanvasSpy = jest.spyOn(CanvasDisplay.methods, 'generateCanvas');
+    const imageURL = 'https://example.com/image.png';
+
+    await wrapper.vm.generateCanvas(imageURL);
+
+    expect(generateCanvasSpy).toHaveBeenCalledTimes(1);
+    expect(generateCanvasSpy).toHaveBeenCalledWith(imageURL);
+  });
+
+  it('setColor returns the correct color based on the productNum', () => {
+    expect(wrapper.vm.setColor(1)).toBe('green');
+    expect(wrapper.vm.setColor(2)).toBe('red');
+    expect(wrapper.vm.setColor(3)).toBeUndefined();
+  });
+
+  it('styleLabel styles the label correctly', () => {
+    const ctx = {
+      beginPath: jest.fn(),
+      arc: jest.fn(),
+      closePath: jest.fn(),
+      fillStyle: jest.fn(),
+      fill: jest.fn(),
+      strokeStyle: jest.fn(),
+      lineWidth: jest.fn(),
+      stroke: jest.fn(),
+      font: jest.fn(),
+      textAlign: jest.fn(),
+      textBaseline: jest.fn(),
+      fillText: jest.fn(),
+    };
+
+    wrapper.vm.styleLabel(ctx, 10, 20, 30, 'label', 'fillStyle', 'strokeStyle');
+
+    expect(ctx.beginPath).toHaveBeenCalledTimes(1);
+    expect(ctx.arc).toHaveBeenCalledTimes(1);
+    expect(ctx.closePath).toHaveBeenCalledTimes(1);
+    expect(ctx.fillStyle).toHaveBeenCalledTimes(2);
+    expect(ctx.fill).toHaveBeenCalledTimes(1);
+    expect(ctx.strokeStyle).toHaveBeenCalledTimes(1);
+    expect(ctx.lineWidth).toHaveBeenCalledTimes(1);
+    expect(ctx.stroke).toHaveBeenCalledTimes(1);
+    expect(ctx.font).toHaveBeenCalledTimes(1);
+    expect(ctx.textAlign).toHaveBeenCalledTimes(1);
+    expect(ctx.textBaseline).toHaveBeenCalledTimes(1);
+    expect(ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+});
