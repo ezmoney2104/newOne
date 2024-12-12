@@ -21,3 +21,95 @@ loadBoxInImage() {
       }
     },
  
+---
+import { shallowMount } from '@vue/test-utils'
+import CanvasDisplay from '@/components/CanvasDisplay.vue'
+
+describe('CanvasDisplay.vue - loadBoxInImage()', () => {
+  let wrapper
+  let mockCtx
+
+  const mockProcessArray = [
+    { x: 10, y: 20, width: 100, height: 50, id: 'A', productNum: 1 },
+    { x: 150, y: 80, width: 200, height: 100, id: 'B', productNum: 2 }
+  ]
+
+  beforeEach(() => {
+    mockCtx = {
+      drawImage: jest.fn(),
+      fillRect: jest.fn(),
+      strokeRect: jest.fn(),
+      beginPath: jest.fn(),
+      arc: jest.fn(),
+      closePath: jest.fn(),
+      fill: jest.fn(),
+      stroke: jest.fn(),
+      fillText: jest.fn(),
+      font: '',
+      textAlign: '',
+      textBaseline: ''
+    }
+
+    wrapper = shallowMount(CanvasDisplay, {
+      propsData: {
+        processArray: mockProcessArray
+      }
+    })
+
+    wrapper.vm.ctx = mockCtx // mock canvas context
+    wrapper.vm.canvas = { width: 450, height: 750 } // mock canvas dimensions
+    wrapper.vm.image = new Image() // mock image object
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('should draw the image on the canvas', () => {
+    wrapper.vm.loadBoxInImage()
+
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(wrapper.vm.image, 0, 0, 450, 750)
+  })
+
+  it('should loop through processArray and draw each rectangle with the correct styles', () => {
+    const setColorSpy = jest.spyOn(wrapper.vm, 'setColor').mockReturnValue({
+      fillStyle: 'green',
+      strokeStyle: 'white',
+      textColor: 'white'
+    })
+    const styleLabelSpy = jest.spyOn(wrapper.vm, 'styleLabel')
+
+    wrapper.vm.loadBoxInImage()
+
+    mockProcessArray.forEach(rect => {
+      expect(setColorSpy).toHaveBeenCalledWith(rect.productNum)
+      
+      // Check that the rectangle is drawn
+      expect(mockCtx.fillStyle).toBe('green')
+      expect(mockCtx.fillRect).toHaveBeenCalledWith(rect.x, rect.y, rect.width, rect.height)
+      expect(mockCtx.strokeStyle).toBe('white')
+      expect(mockCtx.lineWidth).toBe(2)
+      expect(mockCtx.strokeRect).toHaveBeenCalledWith(rect.x, rect.y, rect.width, rect.height)
+
+      // Check that the label is styled
+      const circleX = rect.x + rect.width / 2
+      const circleY = rect.y + rect.height / 2
+      expect(styleLabelSpy).toHaveBeenCalledWith(circleX, circleY, 15, rect.id, 'green', 'white', 'white')
+    })
+  })
+
+  it('should properly call styleLabel for each rectangle', () => {
+    const styleLabelSpy = jest.spyOn(wrapper.vm, 'styleLabel')
+
+    wrapper.vm.loadBoxInImage()
+
+    mockProcessArray.forEach(rect => {
+      const circleX = rect.x + rect.width / 2
+      const circleY = rect.y + rect.height / 2
+      expect(styleLabelSpy).toHaveBeenCalledWith(circleX, circleY, 15, rect.id, 'green', 'white', 'white')
+    })
+  })
+})
+
+--
+
