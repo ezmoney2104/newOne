@@ -1,0 +1,23 @@
+loadBoxInImage() {
+      {
+        // Draw the image on the canvas
+        this.ctx.drawImage(this.image, 0, 0, this.canvas.width, this.canvas.height)
+ 
+        // Loop through the data and draw each rectangle
+        this.processArray.forEach((rect) => {
+          const { fillStyle, strokeStyle, textColor } = this.setColor(rect.productNum)
+          // Draw the rectangle
+          this.ctx.fillStyle = fillStyle
+          this.ctx.fillRect(rect.x, rect.y, rect.width, rect.height)
+          this.ctx.strokeStyle = 'white'
+          this.ctx.lineWidth = 2
+          this.ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
+ 
+          // Draw label inside a circle
+          const circleX = rect.x + rect.width / 2
+          const circleY = rect.y + rect.height / 2
+          this.styleLabel(circleX, circleY, 15, rect.id, fillStyle, strokeStyle, textColor)
+        })
+      }
+    },
+ 
