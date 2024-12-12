@@ -11,7 +11,7 @@ import CanvasDisplay from './CanvasDisplay.vue'
 import { FetchAPI } from '@/utils/apiRequest'
 
 export default {
-  name: 'HomeView',
+  name: 'LeftBase',
   components: { Indicator, CanvasDisplay },
   data() {
     return {
