@@ -90,10 +90,11 @@ export default {
         this.processData.forEach((rect) => {
           // Draw the rectangle
           ctx.fillStyle = this.setColor(rect.productNum)
-          ctx.strokeStyle = ''
+          ctx.fillRect(rect.x, rect.y, rect.width, rect.height)
+          ctx.lineWidth = 3
           ctx.strokeStyle = 'white'
           ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
-          ctx.fillRect(rect.x, rect.y, rect.width, rect.height)
+          
 
           // Draw label inside a circle
           const circleX = rect.x + rect.width / 2
