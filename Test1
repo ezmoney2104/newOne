@@ -198,3 +198,124 @@ it('generates the canvas correctly', async () => {
 
 
 
+-----
+
+
+import { shallowMount } from '@vue/test-utils'
+import CanvasDisplay from '@/components/CanvasDisplay.vue'
+
+describe('CanvasDisplay.vue', () => {
+  let wrapper
+  let mockCtx
+
+  const mockProcessArray = [
+    { x: 10, y: 20, width: 100, height: 50, id: 'A', productNum: 1 },
+    { x: 150, y: 80, width: 200, height: 100, id: 'B', productNum: 2 }
+  ]
+
+  beforeEach(() => {
+    mockCtx = {
+      drawImage: jest.fn(),
+      fillRect: jest.fn(),
+      strokeRect: jest.fn(),
+      beginPath: jest.fn(),
+      arc: jest.fn(),
+      closePath: jest.fn(),
+      fill: jest.fn(),
+      stroke: jest.fn(),
+      fillText: jest.fn(),
+      font: '',
+      textAlign: '',
+      textBaseline: ''
+    }
+
+    wrapper = shallowMount(CanvasDisplay, {
+      propsData: {
+        processArray: mockProcessArray
+      }
+    })
+
+    wrapper.vm.ctx = mockCtx // mock canvas context
+    wrapper.vm.canvas = { width: 450, height: 750 } // mock canvas dimensions
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('should call initiateCanvas, load an image, and draw it on the canvas', () => {
+    const initiateCanvasSpy = jest.spyOn(wrapper.vm, 'initiateCanvas')
+    const mockImage = new Image()
+    jest.spyOn(window, 'Image').mockImplementation(() => mockImage)
+    
+    wrapper.vm.generateCanvas('image-db-url')
+
+    // Simulate image load
+    mockImage.onload()
+
+    expect(initiateCanvasSpy).toHaveBeenCalled()
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(mockImage, 0, 0, 450, 750)
+  })
+
+  it('should draw each rectangle from processArray on the canvas', () => {
+    const setColorSpy = jest.spyOn(wrapper.vm, 'setColor').mockReturnValue({
+      fillStyle: 'green',
+      strokeStyle: 'white',
+      textColor: 'white'
+    })
+    const styleLabelSpy = jest.spyOn(wrapper.vm, 'styleLabel')
+
+    const mockImage = new Image()
+    jest.spyOn(window, 'Image').mockImplementation(() => mockImage)
+
+    wrapper.vm.generateCanvas('image-db-url')
+    mockImage.onload()
+
+    mockProcessArray.forEach(rect => {
+      expect(mockCtx.fillStyle).toBe('green')
+      expect(mockCtx.fillRect).toHaveBeenCalledWith(rect.x, rect.y, rect.width, rect.height)
+      expect(mockCtx.strokeStyle).toBe('white')
+      expect(mockCtx.lineWidth).toBe(2)
+      expect(mockCtx.strokeRect).toHaveBeenCalledWith(rect.x, rect.y, rect.width, rect.height)
+
+      const circleX = rect.x + rect.width / 2
+      const circleY = rect.y + rect.height / 2
+      expect(styleLabelSpy).toHaveBeenCalledWith(circleX, circleY, 15, rect.id, 'green', 'white', 'white')
+    })
+  })
+
+  it('should call styleLabel to style the label for each rectangle', () => {
+    wrapper.vm.styleLabel(50, 50, 15, 'Test', 'green', 'white', 'black')
+
+    expect(mockCtx.beginPath).toHaveBeenCalled()
+    expect(mockCtx.arc).toHaveBeenCalledWith(50, 50, 15, 0, Math.PI * 2)
+    expect(mockCtx.closePath).toHaveBeenCalled()
+    expect(mockCtx.fillStyle).toBe('green')
+    expect(mockCtx.fill).toHaveBeenCalled()
+    expect(mockCtx.strokeStyle).toBe('white')
+    expect(mockCtx.lineWidth).toBe(3)
+    expect(mockCtx.stroke).toHaveBeenCalled()
+
+    expect(mockCtx.font).toBe('bold 15px Arial')
+    expect(mockCtx.textAlign).toBe('center')
+    expect(mockCtx.textBaseline).toBe('middle')
+    expect(mockCtx.fillStyle).toBe('black')
+    expect(mockCtx.fillText).toHaveBeenCalledWith('Test', 50, 50)
+  })
+
+  it('should properly call styleLabel for each rectangle in processArray', () => {
+    const styleLabelSpy = jest.spyOn(wrapper.vm, 'styleLabel')
+    const mockImage = new Image()
+    jest.spyOn(window, 'Image').mockImplementation(() => mockImage)
+    
+    wrapper.vm.generateCanvas('image-db-url')
+    mockImage.onload()
+
+    mockProcessArray.forEach(rect => {
+      const circleX = rect.x + rect.width / 2
+      const circleY = rect.y + rect.height / 2
+      expect(styleLabelSpy).toHaveBeenCalledWith(circleX, circleY, 15, rect.id, 'green', 'white', 'white')
+    })
+  })
+})
+
