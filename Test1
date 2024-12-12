@@ -1,0 +1,143 @@
+import { shallowMount } from '@vue/test-utils'
+import CanvasDisplay from '@/components/CanvasDisplay.vue'
+import { FetchAPI } from '@/utils/apiRequest'
+
+// Mock the API request module
+jest.mock('@/utils/apiRequest', () => ({
+  FetchAPI: jest.fn().mockImplementation(() => ({
+    get: jest.fn()
+  }))
+}))
+
+describe('CanvasDisplay.vue', () => {
+  let wrapper
+  const mockProcessArray = [
+    { x: 10, y: 20, width: 100, height: 50, id: 'A', productNum: 1 },
+    { x: 150, y: 80, width: 200, height: 100, id: 'B', productNum: 2 }
+  ]
+
+  beforeEach(() => {
+    wrapper = shallowMount(CanvasDisplay, {
+      propsData: {
+        processArray: mockProcessArray
+      }
+    })
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('should call fetchImage on mounted', () => {
+    const fetchImageSpy = jest.spyOn(wrapper.vm, 'fetchImage')
+    wrapper.vm.$options.mounted[0].call(wrapper.vm)
+    expect(fetchImageSpy).toHaveBeenCalled()
+  })
+
+  it('should call FetchAPI get method and call generateCanvas with image URL', async () => {
+    const mockResponse = new Blob(['image content'], { type: 'image/png' })
+    const mockURL = 'mock-url'
+    global.URL.createObjectURL = jest.fn().mockReturnValue(mockURL)
+    const fetchApiInstance = new FetchAPI()
+    fetchApiInstance.get.mockResolvedValue(mockResponse)
+    
+    await wrapper.vm.fetchImage()
+    
+    expect(fetchApiInstance.get).toHaveBeenCalledWith('/api/yellow-line/image/lane.png', { responseType: 'blob' })
+    expect(global.URL.createObjectURL).toHaveBeenCalledWith(mockResponse)
+    expect(wrapper.vm.generateCanvas).toHaveBeenCalledWith(mockURL)
+  })
+
+  it('should log error if fetchImage request fails', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const fetchApiInstance = new FetchAPI()
+    fetchApiInstance.get.mockRejectedValue(new Error('Network error'))
+
+    await wrapper.vm.fetchImage()
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching the image:', expect.any(Error))
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('should initialize canvas context when initiateCanvas is called', () => {
+    const mockCanvas = document.createElement('canvas')
+    wrapper.vm.$refs.myCanvas = mockCanvas
+    const getContextSpy = jest.spyOn(mockCanvas, 'getContext')
+
+    wrapper.vm.initiateCanvas()
+
+    expect(wrapper.vm.canvas).toBe(mockCanvas)
+    expect(wrapper.vm.ctx).toBeDefined()
+    expect(getContextSpy).toHaveBeenCalledWith('2d')
+    expect(wrapper.vm.canvas.width).toBe(450)
+    expect(wrapper.vm.canvas.height).toBe(750)
+  })
+
+  it('should generate canvas with an image and draw rectangles', () => {
+    const mockCtx = {
+      drawImage: jest.fn(),
+      fillRect: jest.fn(),
+      strokeRect: jest.fn()
+    }
+    const mockImage = new Image()
+    const initiateCanvasSpy = jest.spyOn(wrapper.vm, 'initiateCanvas')
+    wrapper.vm.ctx = mockCtx
+    wrapper.vm.canvas = { width: 450, height: 750 }
+
+    wrapper.vm.generateCanvas('image-db-url')
+
+    mockImage.onload()
+    
+    expect(initiateCanvasSpy).toHaveBeenCalled()
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(mockImage, 0, 0, 450, 750)
+    mockProcessArray.forEach(rect => {
+      expect(mockCtx.fillRect).toHaveBeenCalledWith(rect.x, rect.y, rect.width, rect.height)
+      expect(mockCtx.strokeRect).toHaveBeenCalledWith(rect.x, rect.y, rect.width, rect.height)
+    })
+  })
+
+  it('should style label correctly with styleLabel method', () => {
+    const mockCtx = {
+      beginPath: jest.fn(),
+      arc: jest.fn(),
+      closePath: jest.fn(),
+      fill: jest.fn(),
+      stroke: jest.fn(),
+      fillText: jest.fn(),
+      textAlign: '',
+      textBaseline: ''
+    }
+    wrapper.vm.ctx = mockCtx
+
+    wrapper.vm.styleLabel(50, 50, 15, 'Test', 'green', 'white', 'black')
+
+    expect(mockCtx.beginPath).toHaveBeenCalled()
+    expect(mockCtx.arc).toHaveBeenCalledWith(50, 50, 15, 0, Math.PI * 2)
+    expect(mockCtx.closePath).toHaveBeenCalled()
+    expect(mockCtx.fillStyle).toBe('green')
+    expect(mockCtx.fill).toHaveBeenCalled()
+    expect(mockCtx.strokeStyle).toBe('white')
+    expect(mockCtx.stroke).toHaveBeenCalled()
+    expect(mockCtx.fillStyle).toBe('black')
+    expect(mockCtx.fillText).toHaveBeenCalledWith('Test', 50, 50)
+  })
+
+  it('should set the correct color styles based on the productNum', () => {
+    const color1 = wrapper.vm.setColor(1)
+    const color2 = wrapper.vm.setColor(2)
+    const color3 = wrapper.vm.setColor(3)
+
+    expect(color1).toEqual({ fillStyle: 'green', strokeStyle: 'white', textColor: 'white' })
+    expect(color2).toEqual({ fillStyle: 'red', strokeStyle: 'white', textColor: 'white' })
+    expect(color3).toEqual({ fillStyle: 'yellow', strokeStyle: 'black', textColor: 'black' })
+  })
+
+  it('should return undefined if productNum is not in lookup table for setColor', () => {
+    const color = wrapper.vm.setColor(99)
+    expect(color).toBeUndefined()
+  })
+
+  it('should correctly render processArray prop', () => {
+    expect(wrapper.props('processArray')).toEqual(mockProcessArray)
+  })
+})
