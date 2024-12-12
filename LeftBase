@@ -43,3 +43,90 @@ export default {
   },
 }
 </script>
+
+----
+
+
+import { shallowMount } from '@vue/test-utils'
+import HomeView from '@/components/HomeView.vue'
+import Indicator from '@/components/Indicator.vue'
+import CanvasDisplay from '@/components/CanvasDisplay.vue'
+import { FetchAPI } from '@/utils/apiRequest'
+
+// Mock the API request module
+jest.mock('@/utils/apiRequest', () => ({
+  FetchAPI: jest.fn().mockImplementation(() => ({
+    get: jest.fn()
+  }))
+}))
+
+describe('HomeView.vue', () => {
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = shallowMount(HomeView, {
+      stubs: {
+        Indicator: true,
+        CanvasDisplay: true
+      }
+    })
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('should render the Indicator and CanvasDisplay components', () => {
+    expect(wrapper.findComponent(Indicator).exists()).toBe(true)
+    expect(wrapper.findComponent(CanvasDisplay).exists()).toBe(true)
+  })
+
+  it('should call fetchData on mounted', () => {
+    const fetchDataSpy = jest.spyOn(wrapper.vm, 'fetchData')
+    wrapper.vm.$options.mounted[0].call(wrapper.vm)
+    expect(fetchDataSpy).toHaveBeenCalled()
+  })
+
+  it('should fetch process data and populate processData correctly', async () => {
+    const mockResponseData = [
+      { id: 1, x_coord: 10, y_coord: 20, width: 100, height: 50, product_num: 1 },
+      { id: 2, x_coord: 150, y_coord: 80, width: 200, height: 100, product_num: 2 }
+    ]
+    const fetchApiInstance = new FetchAPI()
+    fetchApiInstance.get.mockResolvedValue({ data: mockResponseData })
+
+    await wrapper.vm.fetchData()
+
+    expect(fetchApiInstance.get).toHaveBeenCalledWith('/api/process')
+    expect(wrapper.vm.processData).toEqual([
+      { id: 1, x: 10, y: 20, width: 100, height: 50, productNum: 1 },
+      { id: 2, x: 150, y: 80, width: 200, height: 100, productNum: 2 }
+    ])
+  })
+
+  it('should handle empty response gracefully when fetching process data', async () => {
+    const fetchApiInstance = new FetchAPI()
+    fetchApiInstance.get.mockResolvedValue({ data: [] })
+
+    await wrapper.vm.fetchData()
+
+    expect(fetchApiInstance.get).toHaveBeenCalledWith('/api/process')
+    expect(wrapper.vm.processData).toEqual([])
+  })
+
+  it('should call CanvasDisplay with processData as prop', async () => {
+    const mockResponseData = [
+      { id: 1, x_coord: 10, y_coord: 20, width: 100, height: 50, product_num: 1 }
+    ]
+    const fetchApiInstance = new FetchAPI()
+    fetchApiInstance.get.mockResolvedValue({ data: mockResponseData })
+
+    await wrapper.vm.fetchData()
+    const canvasDisplay = wrapper.findComponent(CanvasDisplay)
+
+    expect(canvasDisplay.exists()).toBe(true)
+    expect(canvasDisplay.props('processArray')).toEqual([
+      { id: 1, x: 10, y: 20, width: 100, height: 50, productNum: 1 }
+    ])
+  })
+})
