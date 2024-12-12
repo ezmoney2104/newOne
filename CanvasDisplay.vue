@@ -1,6 +1,6 @@
 <template>
   <div class="mx-5">
-    <canvas ref="myCanvas" width="450" height="750" style="border: 1px solid grey"></canvas>
+    <canvas ref="myCanvas"></canvas>
   </div>
 </template>
 <script>
@@ -8,14 +8,20 @@ import { FetchAPI } from '@/utils/apiRequest'
 
 export default {
   name: 'CanvasDisplay',
+  props: {
+    processArray: {
+      type: Array,
+      required: true,
+    },
+  },
   data() {
     return {
-      processData: [],
+      ctx: null,
+      canvas: null,
     }
   },
   mounted() {
     this.fetchImage()
-    this.fetchData()
   },
   methods: {
     /**
@@ -36,89 +42,109 @@ export default {
     },
 
     /**
-     * Fetch the process data from the database
+     * Initialize canvas context
      */
-    async fetchData() {
-      const fetchApi = new FetchAPI()
-      const res = await fetchApi.get('/api/process')
-      for (const data of res.data) {
-        const obj = {
-          id: data.id,
-          x: data.x_coord,
-          y: data.y_coord,
-          width: data.width,
-          height: data.height,
-          productNum: data.product_num,
-        }
-        this.processData.push(obj)
-      }
+    initiateCanvas() {
+      this.canvas = this.$refs.myCanvas
+      this.ctx = this.canvas.getContext('2d')
+      this.canvas.width = 450
+      this.canvas.height = 750
     },
 
     /**
      * Function to generate the Canvas using the image url as parameter
      * @param {String} imageDB - the image url from the database
      */
-
     generateCanvas(imageDB) {
-      const canvas = this.$refs.myCanvas
-      const ctx = canvas.getContext('2d')
+      this.initiateCanvas()
       const image = new Image()
       image.src = imageDB
 
-      const styleLabel = (ctx, x, y, radius, label, fillStyle, strokeStyle) => {
-        ctx.beginPath()
-        ctx.arc(x, y, radius, 0, Math.PI * 2)
-        ctx.closePath()
-        ctx.fillStyle = fillStyle
-        ctx.fill()
-        ctx.strokeStyle = strokeStyle
-        ctx.lineWidth = 3
-        ctx.stroke()
-
-        ctx.font = 'bold 15px Arial'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillStyle = 'white'
-        ctx.fillText(label, x, y)
-      }
       // Load image with the process boxes
       image.onload = () => {
         // Draw the image on the canvas
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+        this.ctx.drawImage(image, 0, 0, this.canvas.width, this.canvas.height)
 
         // Loop through the data and draw each rectangle
-        this.processData.forEach((rect) => {
+        this.processArray.forEach((rect) => {
+          const { fillStyle, strokeStyle, textColor } = this.setColor(rect.productNum)
           // Draw the rectangle
-          ctx.fillStyle = this.setColor(rect.productNum)
-          ctx.fillRect(rect.x, rect.y, rect.width, rect.height)
-          ctx.lineWidth = 3
-          ctx.strokeStyle = 'white'
-          ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
-          
+          this.ctx.fillStyle = fillStyle
+          this.ctx.fillRect(rect.x, rect.y, rect.width, rect.height)
+          this.ctx.strokeStyle = 'white'
+          this.ctx.lineWidth = 2
+          this.ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
 
           // Draw label inside a circle
           const circleX = rect.x + rect.width / 2
           const circleY = rect.y + rect.height / 2
-          styleLabel(ctx, circleX, circleY, 15, rect.id, 'transparent', 'white')
+          this.styleLabel(circleX, circleY, 15, rect.id, fillStyle, strokeStyle, textColor)
         })
       }
+    },
+
+    /**
+     * Style the label displayed in boxes
+     * @param {Number} x - x coordinate
+     * @param {Number} y - y coordinate
+     * @param {Number} radius - radius of circle
+     * @param {String} label - text to be displayed
+     * @param {String} fillStyle - background color of the circle
+     * @param {String} strokeStyle - color of the border line
+     * @param {String} textColor - color of the text
+     */
+    styleLabel(x, y, radius, label, fillStyle, strokeStyle, textColor) {
+      this.ctx.beginPath()
+      this.ctx.arc(x, y, radius, 0, Math.PI * 2)
+      this.ctx.closePath()
+      this.ctx.fillStyle = fillStyle
+      this.ctx.fill()
+      this.ctx.strokeStyle = strokeStyle
+      this.ctx.lineWidth = 3
+      this.ctx.stroke()
+
+      this.ctx.font = 'bold 15px Arial'
+      this.ctx.textAlign = 'center'
+      this.ctx.textBaseline = 'middle'
+      this.ctx.fillStyle = textColor
+      this.ctx.fillText(label, x, y)
     },
 
     /**
      * Function to set the color of canvas based on their productNum
      * @param {Number} status - parameter for the productNum of the canvas
      */
-
     setColor(status) {
-      if (status === 1) {
-        return 'green'
-      } else if (status === 2) {
-        return 'red'
+      const lookup = {
+        1: {
+          fillStyle: 'green',
+          strokeStyle: 'white',
+          textColor: 'white',
+        },
+        2: {
+          fillStyle: 'red',
+          strokeStyle: 'white',
+          textColor: 'white',
+        },
+        3: {
+          fillStyle: 'yellow',
+          strokeStyle: 'black',
+          textColor: 'black',
+        },
       }
+
+      return lookup[status]
     },
   },
 }
 </script>
+
+<style scoped>
+canvas {
+  border: 1px solid grey;
+}
+</style>
+
 
 // CanvasDisplay.spec.js
 
