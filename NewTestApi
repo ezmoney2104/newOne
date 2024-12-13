@@ -1,0 +1,48 @@
+import { API_BASE_URL } from '@/path/to/your/file'
+
+describe('getApiBaseUrl', () => {
+  let originalEnv
+
+  beforeAll(() => {
+    // Save original environment variables
+    originalEnv = process.env
+  })
+
+  afterEach(() => {
+    // Restore the environment variables after each test
+    process.env = { ...originalEnv }
+    jest.resetModules() // Clears any cached modules
+  })
+
+  it('returns localhost URL in development environment', () => {
+    process.env.NODE_ENV = 'development'
+    // Dynamically import to ensure new env variable is applied
+    const { API_BASE_URL } = require('@/path/to/your/file')
+    expect(API_BASE_URL).toBe('http://localhost:5000')
+  })
+
+  it('returns window location origin URL in production environment', () => {
+    process.env.NODE_ENV = 'production'
+    const mockOrigin = 'https://example.com'
+    delete window.location // Remove existing window location object
+    window.location = { origin: mockOrigin }
+
+    const { API_BASE_URL } = require('@/path/to/your/file')
+    expect(API_BASE_URL).toBe(`${mockOrigin}/`)
+  })
+
+  it('returns window location origin URL in test environment', () => {
+    process.env.NODE_ENV = 'test'
+    const mockOrigin = 'https://test-env.com'
+    delete window.location // Remove existing window location object
+    window.location = { origin: mockOrigin }
+
+    const { API_BASE_URL } = require('@/path/to/your/file')
+    expect(API_BASE_URL).toBe(`${mockOrigin}/`)
+  })
+})
+
+
+-----
+
+
