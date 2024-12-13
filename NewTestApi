@@ -45,4 +45,129 @@ describe('getApiBaseUrl', () => {
 
 -----
 
+import axios from 'axios'
+import { FetchAPI } from '@/path/to/your/file'
 
+// Mock axios methods
+jest.mock('axios')
+
+describe('FetchAPI', () => {
+  let fetchApi
+
+  beforeEach(() => {
+    fetchApi = new FetchAPI()
+    jest.clearAllMocks()
+  })
+
+  describe('get method', () => {
+    it('should call axios.get with the correct URL and options', async () => {
+      const mockResponse = { data: { success: true, message: 'Success' } }
+      axios.get.mockResolvedValue(mockResponse)
+      
+      const uri = '/test-endpoint'
+      const options = { headers: { Authorization: 'Bearer token' } }
+      const result = await fetchApi.get(uri, options)
+      
+      expect(axios.get).toHaveBeenCalledWith(`${process.env.API_BASE_URL}${uri}`, options)
+      expect(result).toEqual(mockResponse.data)
+    })
+
+    it('should handle errors and return default error response', async () => {
+      const errorMessage = 'Network Error'
+      axios.get.mockRejectedValue(new Error(errorMessage))
+      
+      const result = await fetchApi.get('/test-endpoint')
+      
+      expect(axios.get).toHaveBeenCalled()
+      expect(result).toEqual({
+        success: false,
+        message_response: errorMessage,
+        message_content: errorMessage,
+      })
+    })
+  })
+
+  describe('put method', () => {
+    it('should call axios.put with the correct URL and data', async () => {
+      const mockResponse = { data: { success: true, message: 'Updated successfully' } }
+      axios.put.mockResolvedValue(mockResponse)
+      
+      const uri = '/update-endpoint'
+      const data = { id: 1, name: 'Updated Name' }
+      const result = await fetchApi.put(uri, data)
+      
+      expect(axios.put).toHaveBeenCalledWith(`${process.env.API_BASE_URL}${uri}`, { params: data })
+      expect(result).toEqual(mockResponse.data)
+    })
+
+    it('should handle errors and return default error response', async () => {
+      const errorMessage = 'Update Failed'
+      axios.put.mockRejectedValue(new Error(errorMessage))
+      
+      const result = await fetchApi.put('/update-endpoint', { id: 1 })
+      
+      expect(axios.put).toHaveBeenCalled()
+      expect(result).toEqual({
+        success: false,
+        message_response: errorMessage,
+        message_content: errorMessage,
+      })
+    })
+  })
+
+  describe('post method', () => {
+    it('should call axios.post with the correct URL and data', async () => {
+      const mockResponse = { data: { success: true, message: 'Created successfully' } }
+      axios.post.mockResolvedValue(mockResponse)
+      
+      const uri = '/create-endpoint'
+      const data = { name: 'New Data' }
+      const result = await fetchApi.post(uri, data)
+      
+      expect(axios.post).toHaveBeenCalledWith(`${process.env.API_BASE_URL}${uri}`, { params: data })
+      expect(result).toEqual(mockResponse.data)
+    })
+
+    it('should handle errors and return default error response', async () => {
+      const errorMessage = 'Create Failed'
+      axios.post.mockRejectedValue(new Error(errorMessage))
+      
+      const result = await fetchApi.post('/create-endpoint', { name: 'New Data' })
+      
+      expect(axios.post).toHaveBeenCalled()
+      expect(result).toEqual({
+        success: false,
+        message_response: errorMessage,
+        message_content: errorMessage,
+      })
+    })
+  })
+
+  describe('delete method', () => {
+    it('should call axios.delete with the correct URL and data', async () => {
+      const mockResponse = { data: { success: true, message: 'Deleted successfully' } }
+      axios.delete.mockResolvedValue(mockResponse)
+      
+      const uri = '/delete-endpoint'
+      const data = { id: 1 }
+      const result = await fetchApi.delete(uri, data)
+      
+      expect(axios.delete).toHaveBeenCalledWith(`${process.env.API_BASE_URL}${uri}`, { params: data })
+      expect(result).toEqual(mockResponse.data)
+    })
+
+    it('should handle errors and return default error response', async () => {
+      const errorMessage = 'Delete Failed'
+      axios.delete.mockRejectedValue(new Error(errorMessage))
+      
+      const result = await fetchApi.delete('/delete-endpoint', { id: 1 })
+      
+      expect(axios.delete).toHaveBeenCalled()
+      expect(result).toEqual({
+        success: false,
+        message_response: errorMessage,
+        message_content: errorMessage,
+      })
+    })
+  })
+})
