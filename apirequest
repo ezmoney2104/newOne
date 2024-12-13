@@ -1,0 +1,118 @@
+/**
+ * Set Api Base Url
+ * @return {String} url link path
+ */
+function getApiBaseUrl() {
+  const env = process.env.NODE_ENV
+  if (env === 'development') {
+    return 'http://localhost:5000'
+  }
+
+  const url = window.location.origin + '/'
+  return url
+}
+
+const API_BASE_URL = getApiBaseUrl()
+export { API_BASE_URL }
+
+
+---------------
+
+import axios from 'axios'
+import { API_BASE_URL } from '@/environment.js'
+/**
+ * Initialization of all API Requests.
+ */
+export class FetchAPI {
+  /**
+   * Send get request
+   * @param {String} uri - uri of the database
+   * @param {object} option - property option of get
+   * @return {Object} response.data - the response from the backend
+   */
+  async get(uri, option = {}) {
+    let response
+    try {
+      response = await axios.get(API_BASE_URL + uri, option)
+    } catch (error) {
+      response = {
+        data: {
+          success: false,
+          message_response: error.message,
+          message_content: error.message,
+        },
+      }
+    }
+    return response.data
+  }
+  /**
+   * Send put request
+   * @param {String} uri - uri of the database
+   * @param {String} data - data to be updated to the database
+   * @return {Object} response.data - the response from the backend
+   */
+  async put(uri, data) {
+    let response
+    try {
+      response = await axios.put(API_BASE_URL + uri, {
+        params: data,
+      })
+    } catch (error) {
+      response = {
+        data: {
+          success: false,
+          message_response: error.message,
+          message_content: error.message,
+        },
+      }
+    }
+    return response.data
+  }
+  /**
+   * Send put request
+   * @param {String} uri - uri of the database
+   * @param {String} data - data to be posted to the database
+   * @return {Object} response.data - the response from the backend
+   */
+  async post(uri, data) {
+    let response
+    try {
+      response = await axios.post(API_BASE_URL + uri, {
+        params: data,
+      })
+    } catch (error) {
+      response = {
+        data: {
+          success: false,
+          message_response: error.message,
+          message_content: error.message,
+        },
+      }
+    }
+    return response.data
+  }
+  /**
+   * Send put request
+   * @param {String} uri - uri of the database
+   * @param {Object} data - id to be reffered to the database
+   * @return {Object} response.data - the response from the backend
+   */
+  async delete(uri, data) {
+    let response
+    try {
+      response = await axios.delete(API_BASE_URL + uri, {
+        params: data,
+      })
+      return response.data
+    } catch (error) {
+      response = {
+        data: {
+          success: false,
+          message_response: error.message,
+          message_content: error.message,
+        },
+      }
+    }
+    return response.data
+  }
+}
