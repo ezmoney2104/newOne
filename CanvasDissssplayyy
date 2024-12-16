@@ -8,6 +8,11 @@ import { FetchAPI } from '@/utils/apiRequest'
 
 export default {
   name: 'CanvasDisplay',
+  /**
+   * @description
+   * Contains an array of objects of process.
+   * - processArray {Array} - object of processes.
+   */
   props: {
     processArray: {
       type: Array,
