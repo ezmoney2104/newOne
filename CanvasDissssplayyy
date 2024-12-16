@@ -18,6 +18,7 @@ export default {
     return {
       ctx: null,
       canvas: null,
+      image: null,
     }
   },
   mounted() {
@@ -57,17 +58,24 @@ export default {
      */
     generateCanvas(imageDB) {
       this.initiateCanvas()
-      const image = new Image()
-      image.src = imageDB
+      this.image = new Image()
+      this.image.src = imageDB
 
       // Load image with the process boxes
-      image.onload = () => {
+      this.image.onload = this.loadBoxInImage
+    },
+
+    /**
+     * Loads the boxes in the yellow-line image
+     */
+    loadBoxInImage() {
+      {
         // Draw the image on the canvas
-        this.ctx.drawImage(image, 0, 0, this.canvas.width, this.canvas.height)
+        this.ctx.drawImage(this.image, 0, 0, this.canvas.width, this.canvas.height)
 
         // Loop through the data and draw each rectangle
         this.processArray.forEach((rect) => {
-          const { fillStyle, strokeStyle, textColor } = this.setColor(rect.productNum)
+          const { fillStyle, strokeStyle, textColor } = this.setColor(rect.opStatus)
           // Draw the rectangle
           this.ctx.fillStyle = fillStyle
           this.ctx.fillRect(rect.x, rect.y, rect.width, rect.height)
@@ -113,6 +121,7 @@ export default {
     /**
      * Function to set the color of canvas based on their productNum
      * @param {Number} status - parameter for the productNum of the canvas
+     * @returns {Object} object of color props for boxes
      */
     setColor(status) {
       const lookup = {
@@ -122,14 +131,14 @@ export default {
           textColor: 'white',
         },
         2: {
-          fillStyle: 'red',
-          strokeStyle: 'white',
-          textColor: 'white',
-        },
-        3: {
           fillStyle: 'yellow',
           strokeStyle: 'black',
           textColor: 'black',
+        },
+        3: {
+          fillStyle: 'red',
+          strokeStyle: 'white',
+          textColor: 'white',
         },
       }
 
@@ -138,3 +147,9 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+canvas {
+  border: 1px solid grey;
+}
+</style>
