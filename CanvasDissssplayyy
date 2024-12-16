@@ -153,3 +153,127 @@ canvas {
   border: 1px solid grey;
 }
 </style>
+
+
+----
+
+import { shallowMount } from '@vue/test-utils'
+import CanvasDisplay from '@/components/CanvasDisplay.vue'
+import { FetchAPI } from '@/utils/apiRequest'
+
+jest.mock('@/utils/apiRequest') // Mock the FetchAPI module
+
+describe('CanvasDisplay.vue', () => {
+  let wrapper
+  const mockProcessArray = [
+    { x: 10, y: 20, width: 100, height: 50, opStatus: 'active', id: '1' },
+    { x: 150, y: 200, width: 100, height: 50, opStatus: 'inactive', id: '2' },
+  ]
+
+  beforeEach(() => {
+    // Mock the FetchAPI.get method
+    FetchAPI.mockImplementation(() => {
+      return {
+        get: jest.fn().mockResolvedValue(new Blob()) // Mocking a blob response
+      }
+    })
+
+    // Mock the canvas context methods
+    const mockCanvas = {
+      getContext: jest.fn(() => ({
+        drawImage: jest.fn(),
+        fillRect: jest.fn(),
+        strokeRect: jest.fn(),
+        fillText: jest.fn(),
+        beginPath: jest.fn(),
+        arc: jest.fn(),
+        closePath: jest.fn(),
+        fill: jest.fn(),
+        stroke: jest.fn(),
+      })),
+      width: 450,
+      height: 750,
+    }
+
+    wrapper = shallowMount(CanvasDisplay, {
+      propsData: {
+        processArray: mockProcessArray,
+      },
+      mocks: {
+        $refs: {
+          myCanvas: mockCanvas,
+        },
+      },
+    })
+  })
+
+  afterEach(() => {
+    wrapper.destroy()
+  })
+
+  it('fetches the image on mount', async () => {
+    await wrapper.vm.fetchImage()
+    expect(FetchAPI().get).toHaveBeenCalledWith('/api/yellow-line/image/lane.png', {
+      responseType: 'blob',
+    })
+  })
+
+  it('initializes the canvas context', () => {
+    wrapper.vm.initiateCanvas()
+    expect(wrapper.vm.canvas).toBeTruthy()
+    expect(wrapper.vm.ctx).toBeTruthy()
+  })
+
+  it('generates the canvas with the image', async () => {
+    const imageURL = URL.createObjectURL(new Blob())
+    await wrapper.vm.generateCanvas(imageURL)
+    expect(wrapper.vm.image.src).toBe(imageURL)
+  })
+
+  it('loads boxes in the image', async () => {
+    const imageURL = URL.createObjectURL(new Blob())
+    await wrapper.vm.generateCanvas(imageURL)
+    wrapper.vm.image.onload = jest.fn(); // Mock the onload function
+    await wrapper.vm.image.onload(); // Simulate image load
+
+    expect(wrapper.vm.ctx.drawImage).toHaveBeenCalled();
+    expect(wrapper.vm.processArray.length).toBeGreaterThan(0);
+  })
+
+  it('styles the label correctly', async () => {
+    const imageURL = URL.createObjectURL(new Blob())
+    await wrapper.vm.generateCanvas(imageURL)
+    wrapper.vm.image.onload = jest.fn(); // Mock the onload function
+    await wrapper.vm.image.onload(); // Simulate image load
+
+    const rect = mockProcessArray[0]
+    const circleX = rect.x + rect.width / 2
+    const circleY = rect.y + rect.height / 2
+
+    wrapper.vm.styleLabel(circleX, circleY, 15, rect.id, 'red', 'black', 'white')
+
+    expect(wrapper.vm.ctx.fillText).toHaveBeenCalledWith(rect.id, circleX, circleY)
+  })
+
+  it('handles image fetch errors gracefully', async () => {
+    FetchAPI.mockImplementation(() => {
+      return {
+        get: jest.fn().mockRejectedValue(new Error('Fetch error')),
+      }
+    });
+
+    await wrapper.vm.fetchImage();
+    // Check for console error or state change if applicable
+    // You can also spy on console.error if you want to check for error logging
+  });
+
+  it('does not draw boxes if processArray is empty', async () => {
+    wrapper.setProps({ processArray: [] });
+    const imageURL = URL.createObjectURL(new Blob());
+    await wrapper.vm.generateCanvas(imageURL);
+    wrapper.vm.image.onload = jest.fn(); // Mock the onload function
+    await wrapper.vm.image.onload(); // Simulate image load
+
+    expect(wrapper.vm.ctx.fillRect).not.toHaveBeenCalled(); // No rectangles should be drawn
+  });
+})
