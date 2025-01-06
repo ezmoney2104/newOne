@@ -1,0 +1,29 @@
+<template>
+  <div class="table_childequip">
+    <common-table
+      v-for="equipment_info_table in tableProperties"
+      :key="equipment_info_table.id"
+      :table-values="{ goodProducts: '', plannedUnits: '', rate: '', sample: '' }"
+      :item="equipment_info_table"
+    >
+    </common-table>
+  </div>
+</template>
+
+<script>
+import CommonTable from '../common/CommonTable.vue'
+
+import { EQUIP_INFO_1, EQUIP_INFO_2 } from '@/common/recipe/rCommonTable'
+export default {
+  name: 'ChildEquipmentInformation',
+  props: {
+    item: { type: Array, required: false },
+  },
+  components: { CommonTable },
+  data() {
+    return {
+      tableProperties: [{ ...EQUIP_INFO_1 }, { ...EQUIP_INFO_2 }],
+    }
+  },
+}
+</script>
