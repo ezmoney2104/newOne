@@ -1,0 +1,56 @@
+<template>
+  <v-container>
+    <h1
+      v-show="tableProperties.TABLE_TITLE.display.label != ''"
+      class="text-white font-weight-bold"
+    >
+      {{ tableProperties.TABLE_TITLE.display.label }}
+    </h1>
+    <v-table class="main-table">
+      <thead>
+        <tr>
+          <th
+            v-for="columnItem in tableProperties.TABLE_HEADER"
+            :key="columnItem.id"
+            v-bind="columnItem.directives"
+            class="details-table"
+          >
+            <component :is="columnItem.componentName" :item="columnItem"></component>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-center" v-for="[key, value] in Object.entries(tableValues)" :key="key">
+            {{ value }}
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
+  </v-container>
+</template>
+
+<script>
+import CommonLabel from './CommonLabel.vue'
+import { DEFAULT_PROPERTIES } from '@/common/recipe/rCommonTable'
+export default {
+  name: 'CommonTable',
+  props: {
+    item: { type: Array, required: false },
+    tableValues: {
+      type: Object,
+      required: true,
+    },
+  },
+  components: { CommonLabel },
+
+  data() {
+    return {
+      tableProperties: DEFAULT_PROPERTIES,
+    }
+  },
+  mounted() {
+    this.tableProperties = { ...this.item }
+  },
+}
+</script>
