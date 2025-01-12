@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive Table Tooltip</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <table class="responsive-table">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Price</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Apple</td>
+        <td class="tooltip" data-tooltip="Price: $1.50">1.50</td>
+        <td class="tooltip" data-tooltip="Quantity: 10">10</td>
+      </tr>
+      <tr>
+        <td>Banana</td>
+        <td class="tooltip" data-tooltip="Price: $0.80">0.80</td>
+        <td class="tooltip" data-tooltip="Quantity: 15">15</td>
+      </tr>
+      <tr>
+        <td>Cherry</td>
+        <td class="tooltip" data-tooltip="Price: $2.00">2.00</td>
+        <td class="tooltip" data-tooltip="Quantity: 20">20</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
+----
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+thead {
+  background-color: #f4f4f4;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #ddd;
+  position: relative; /* Necessary for tooltip positioning */
+}
+
+.tooltip {
+  cursor: pointer;
+}
+
+/* Tooltip styles */
+.tooltip::after {
+  content: attr(data-tooltip); /* Use the value of the data-tooltip attribute */
+  position: absolute;
+  top: -40px; /* Position above the cell */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  opacity: 0;
+  pointer-events: none; /* Prevent tooltip from blocking mouse events */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 10;
+}
+
+/* Show tooltip on hover */
+.tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-5px); /* Slight movement on hover */
+}
+
+/* Responsive design for smaller screens */
+@media screen and (max-width: 600px) {
+  td {
+    font-size: 0.9rem;
+  }
+
+  .tooltip::after {
+    font-size: 0.8rem;
+    top: -30px; /* Adjust tooltip position for smaller screens */
+  }
+}
+
