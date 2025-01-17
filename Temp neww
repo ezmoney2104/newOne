@@ -1,0 +1,225 @@
+<template>
+  <v-container fluid>
+    <div ref="plotElement"></div>
+  </v-container>
+</template>
+
+<script>
+import Plotly from 'plotly.js-dist'
+
+export default {
+  name: 'AmbientTemperature',
+
+  data() {
+    return {
+      config: { responsive: true, displayModeBar: false },
+      cnt: 0,
+      chartData: [
+        {
+          y: [this.randomTemp()],
+          mode: 'lines+markers',
+          marker: { color: 'red', size: 4 },
+          line: { width: 1 },
+        },
+      ],
+      layout: {
+        xaxis: { range: [0, 50] },
+        title: 'Process Temperature Monitoring Screen',
+      },
+      polling: null,
+    }
+  },
+  mounted() {
+    this.renderChart()
+    this.newTrace()
+  },
+
+  methods: {
+    /**
+     * Function to initialize and display Ambient Temperature Graph
+     */
+    renderChart() {
+      Plotly.newPlot(this.$refs.plotElement, this.chartData, this.layout, this.config)
+    },
+
+    /**
+     * Function to extends movement of the Ambient Temperature Graph when counter reaches greater than 50
+     */
+    newTrace() {
+      this.polling = setInterval(() => {
+        Plotly.extendTraces(this.$refs.plotElement, { y: [[this.randomTemp()]] }, [0])
+        this.cnt++
+        
+        // Adjust x-axis range for smooth scrolling
+        if (this.cnt > 50) {
+          Plotly.relayout(this.$refs.plotElement, {
+            xaxis: {
+              range: [this.cnt - 50, this.cnt],
+            },
+          })
+        }
+
+        // Stop plotting after 1000 points
+        if (this.cnt >= 1000) {
+          clearInterval(this.polling)
+          console.log('Stopped plotting after reaching 1000 points.')
+        }
+      }, 100)
+    },
+
+    /**
+     * Returns a random integer from 0 to 100
+     * @returns {integer} returns random integer
+     */
+    randomTemp() {
+      return Math.floor(Math.random() * 101)
+    },
+  },
+}
+</script>
+
+----
+<template>
+  <v-container fluid>
+    <!-- Main Temperature Graph -->
+    <div ref="plotElement"></div>
+    <!-- Indicator Graph -->
+    <div ref="indicatorElement" style="margin-top: 20px;"></div>
+  </v-container>
+</template>
+
+<script>
+import Plotly from 'plotly.js-dist'
+
+export default {
+  name: 'AmbientTemperature',
+
+  data() {
+    return {
+      config: { responsive: true, displayModeBar: false },
+      cnt: 0,
+      currentTemp: 0,
+      chartData: [
+        {
+          y: [this.randomTemp()],
+          mode: 'lines+markers',
+          marker: { color: 'red', size: 4 },
+          line: { width: 1 },
+        },
+      ],
+      layout: {
+        xaxis: { range: [0, 50] },
+        title: 'Process Temperature Monitoring Screen',
+      },
+      indicatorData: [
+        {
+          x: [0, 100], // Static x-axis range (0 to 100 degrees)
+          y: [0, 0],   // Initial position
+          type: 'scatter',
+          mode: 'lines',
+          line: {
+            color: 'blue',
+            width: 4,
+          },
+        },
+      ],
+      indicatorLayout: {
+        title: 'Temperature Indicator',
+        xaxis: { title: 'Temperature (°C)', range: [0, 100] },
+        yaxis: { visible: false },
+        shapes: [
+          {
+            type: 'line',
+            x0: 50,
+            x1: 50,
+            y0: 0,
+            y1: 1,
+            line: {
+              color: 'blue',
+              width: 3,
+            },
+          },
+        ],
+      },
+      polling: null,
+    }
+  },
+  mounted() {
+    this.renderCharts()
+    this.newTrace()
+  },
+
+  methods: {
+    /**
+     * Function to initialize and display the Ambient Temperature Graph and Indicator Graph
+     */
+    renderCharts() {
+      // Main Temperature Graph
+      Plotly.newPlot(this.$refs.plotElement, this.chartData, this.layout, this.config)
+
+      // Indicator Graph
+      Plotly.newPlot(this.$refs.indicatorElement, this.indicatorData, this.indicatorLayout, this.config)
+    },
+
+    /**
+     * Function to extend movement of the Ambient Temperature Graph and update the Indicator Graph
+     */
+    newTrace() {
+      this.polling = setInterval(() => {
+        // Generate a random temperature and update the main graph
+        this.currentTemp = this.randomTemp()
+        Plotly.extendTraces(this.$refs.plotElement, { y: [[this.currentTemp]] }, [0])
+        this.cnt++
+
+        // Adjust x-axis range for smooth scrolling in the main graph
+        if (this.cnt > 50) {
+          Plotly.relayout(this.$refs.plotElement, {
+            xaxis: {
+              range: [this.cnt - 50, this.cnt],
+            },
+          })
+        }
+
+        // Update the Indicator Graph
+        this.updateIndicator()
+
+        // Stop plotting after 1000 points
+        if (this.cnt >= 1000) {
+          clearInterval(this.polling)
+          console.log('Stopped plotting after reaching 1000 points.')
+        }
+      }, 100)
+    },
+
+    /**
+     * Updates the Indicator Graph to reflect the current temperature
+     */
+    updateIndicator() {
+      Plotly.update(this.$refs.indicatorElement, {
+        shapes: [
+          {
+            type: 'line',
+            x0: this.currentTemp,
+            x1: this.currentTemp,
+            y0: 0,
+            y1: 1,
+            line: {
+              color: 'blue',
+              width: 3,
+            },
+          },
+        ],
+      })
+    },
+
+    /**
+     * Returns a random integer from 0 to 100
+     * @returns {integer} returns random integer
+     */
+    randomTemp() {
+      return Math.floor(Math.random() * 101)
+    },
+  },
+}
+</script>
+
