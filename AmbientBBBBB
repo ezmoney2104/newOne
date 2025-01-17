@@ -1,0 +1,33 @@
+Create a program that switches between the operation status screen, ambient temparature and the error screen every 7 seconds.
+
+目的
+
+For user to be able to monitor the ambient temperature of the process
+
+要件(やりたいこと)
+
+
+
+        
+      Add a new page to display the process temperature monitoring screen.
+
+        
+      This new page switches every 7 seconds. Process Information Screen switch to Error screen after 7 sections switch to Monitoring screen after 5 seconds then back to Process Information Screen.
+
+        
+      Please use Plotly.js
+
+        
+      For the values. You can plot random values in advance, minimum 0 maximum 100. Unit is in Celsius Only
+
+        
+      Create separate DB table for values. plot 1000 set of values. Do not load directly on the front end. Display in the front-end.
+
+
+
+
+        
+      Design an indicator if values exceed 40 degrees or below 10 degrees.
+
+        
+      Challenge(Optional) Automatic plotting
