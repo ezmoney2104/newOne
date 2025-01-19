@@ -256,3 +256,130 @@ export default {
   },
 }
 </script>
+
+
+----------
+
+
+import { shallowMount } from '@vue/test-utils'
+import AmbientTemperature from '@/components/AmbientTemperature.vue'
+import Plotly from 'plotly.js-dist'
+
+jest.mock('plotly.js-dist')
+
+describe('AmbientTemperature.vue', () => {
+  let wrapper
+  beforeEach(() => {
+    wrapper = shallowMount(AmbientTemperature)
+    Plotly.newPlot.mockClear()
+    Plotly.extendTraces.mockClear()
+    Plotly.update.mockClear()
+    Plotly.relayout.mockClear()
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+    wrapper.destroy()
+  })
+
+  test('renders the component and initializes both graphs', () => {
+    expect(Plotly.newPlot).toHaveBeenCalledTimes(2)
+    expect(Plotly.newPlot).toHaveBeenCalledWith(
+      expect.anything(),
+      wrapper.vm.chartData,
+      wrapper.vm.layout,
+      wrapper.vm.config
+    )
+    expect(Plotly.newPlot).toHaveBeenCalledWith(
+      expect.anything(),
+      wrapper.vm.tempData,
+      wrapper.vm.layoutTemp,
+      wrapper.vm.config
+    )
+  })
+
+  test('updates the main graph and indicator graph correctly', async () => {
+    jest.useFakeTimers()
+    const initialTemp = wrapper.vm.currentTemp
+    wrapper.vm.newTrace()
+    jest.advanceTimersByTime(2000) // Simulate 2 seconds
+
+    // Main graph is updated
+    expect(Plotly.extendTraces).toHaveBeenCalledWith(
+      expect.anything(),
+      { y: [[initialTemp]] },
+      [0]
+    )
+
+    // Indicator graph is updated
+    expect(Plotly.update).toHaveBeenCalledWith(
+      expect.anything(),
+      { value: [initialTemp] },
+      [0]
+    )
+
+    jest.useRealTimers()
+  })
+
+  test('stops updating after 1000 points', async () => {
+    jest.useFakeTimers()
+    wrapper.vm.cnt = 999
+    wrapper.vm.newTrace()
+    jest.advanceTimersByTime(2000) // Simulate 2 seconds
+
+    expect(wrapper.vm.cnt).toBe(1000)
+    expect(clearInterval).toHaveBeenCalled()
+
+    jest.useRealTimers()
+  })
+
+  test('scrolls the main graph correctly after 50 points', async () => {
+    jest.useFakeTimers()
+    wrapper.vm.cnt = 50
+    wrapper.vm.newTrace()
+    jest.advanceTimersByTime(2000) // Simulate 2 seconds
+
+    expect(Plotly.relayout).toHaveBeenCalledWith(expect.anything(), {
+      xaxis: {
+        range: [1, 51],
+        title: 'Sample Title',
+      },
+    })
+
+    jest.useRealTimers()
+  })
+
+  test('handles abnormal temperature values gracefully', async () => {
+    jest.spyOn(wrapper.vm, 'randomTemp').mockReturnValueOnce(101) // Simulate an abnormal value
+    wrapper.vm.newTrace()
+
+    expect(wrapper.vm.currentTemp).toBe(101)
+    expect(Plotly.extendTraces).toHaveBeenCalledWith(
+      expect.anything(),
+      { y: [[101]] },
+      [0]
+    )
+    expect(Plotly.update).toHaveBeenCalledWith(
+      expect.anything(),
+      { value: [101] },
+      [0]
+    )
+  })
+
+  test('does not crash when rendering fails', async () => {
+    Plotly.newPlot.mockImplementation(() => {
+      throw new Error('Plotly render error')
+    })
+    expect(() => wrapper.vm.renderChart()).not.toThrow()
+  })
+
+  test('stops updating when component is destroyed', async () => {
+    jest.useFakeTimers()
+    wrapper.vm.newTrace()
+    wrapper.destroy()
+
+    expect(clearInterval).toHaveBeenCalled()
+    jest.useRealTimers()
+  })
+})
+
