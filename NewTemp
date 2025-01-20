@@ -196,3 +196,87 @@ describe('AmbientTemperature.vue', () => {
     expect(wrapper.vm.polling).toBeNull(); // Check if polling is cleared
   });
 });
+
+----
+import { shallowMount } from '@vue/test-utils'
+import AmbientTemperature from '@/components/AmbientTemperature.vue'
+
+describe('AmbientTemperature.vue', () => {
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = shallowMount(AmbientTemperature)
+  })
+
+  afterEach(() => {
+    wrapper.destroy()
+  })
+
+  test('initializes with correct default data', () => {
+    expect(wrapper.vm.cnt).toBe(0)
+    expect(wrapper.vm.chartData).toBeDefined()
+    expect(wrapper.vm.tempData).toBeDefined()
+    expect(wrapper.vm.currentTemp).toBe(0)
+  })
+
+  test('randomTemp generates a valid temperature', () => {
+    const temp = wrapper.vm.randomTemp()
+    expect(temp).toBeGreaterThanOrEqual(0)
+    expect(temp).toBeLessThanOrEqual(100)
+  })
+
+  test('newTrace updates currentTemp and increments cnt', () => {
+    jest.useFakeTimers()
+    wrapper.vm.newTrace()
+
+    const initialCnt = wrapper.vm.cnt
+    const initialTemp = wrapper.vm.currentTemp
+
+    jest.advanceTimersByTime(2000)
+
+    expect(wrapper.vm.cnt).toBe(initialCnt + 1)
+    expect(wrapper.vm.currentTemp).not.toBe(initialTemp)
+    jest.useRealTimers()
+  })
+
+  test('newTrace stops updating after 1000 points', () => {
+    jest.useFakeTimers()
+    wrapper.vm.cnt = 999
+    wrapper.vm.newTrace()
+
+    jest.advanceTimersByTime(2000)
+
+    expect(wrapper.vm.cnt).toBe(1000)
+    jest.useRealTimers()
+  })
+
+  test('newTrace adjusts x-axis range after 50 points', () => {
+    wrapper.vm.cnt = 50
+    wrapper.vm.newTrace()
+    // Validate that cnt > 50 triggers x-axis range adjustment
+    expect(wrapper.vm.layout.xaxis.range).toEqual([1, 51])
+  })
+
+  test('stops polling when the component is destroyed', () => {
+    jest.useFakeTimers()
+    wrapper.vm.newTrace()
+    wrapper.destroy()
+
+    expect(wrapper.vm.polling).toBeNull()
+    jest.useRealTimers()
+  })
+
+  test('handles abnormal temperature values gracefully', () => {
+    jest.spyOn(wrapper.vm, 'randomTemp').mockReturnValueOnce(120) // Simulate an out-of-range value
+    wrapper.vm.newTrace()
+
+    expect(wrapper.vm.currentTemp).toBe(120)
+    expect(wrapper.vm.cnt).toBe(1)
+  })
+
+  test('renderChart does not crash when called', () => {
+    expect(() => wrapper.vm.renderChart()).not.toThrow()
+  })
+})
+
+
