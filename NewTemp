@@ -121,3 +121,78 @@ export default {
   },
 }
 </script>
+
+----
+
+
+import { shallowMount } from '@vue/test-utils';
+import AmbientTemperature from '@/components/AmbientTemperature.vue'; // Adjust the path as necessary
+import Plotly from 'plotly.js-dist';
+
+jest.mock('plotly.js-dist', () => ({
+  newPlot: jest.fn(),
+  extendTraces: jest.fn(),
+  update: jest.fn(),
+  relayout: jest.fn(),
+}));
+
+describe('AmbientTemperature.vue', () => {
+  let wrapper;
+
+  beforeEach(() => {
+    wrapper = shallowMount(AmbientTemperature);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    clearInterval(wrapper.vm.polling); // Clear any intervals set in the component
+  });
+
+  it('renders correctly', () => {
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it('calls renderChart on mount', () => {
+    const renderChartSpy = jest.spyOn(wrapper.vm, 'renderChart');
+    wrapper.vm.$mount(); // Manually mount to trigger mounted lifecycle hook
+    expect(renderChartSpy).toHaveBeenCalled();
+  });
+
+  it('calls newTrace on mount', () => {
+    const newTraceSpy = jest.spyOn(wrapper.vm, 'newTrace');
+    wrapper.vm.$mount(); // Manually mount to trigger mounted lifecycle hook
+    expect(newTraceSpy).toHaveBeenCalled();
+  });
+
+  it('randomTemp returns a number between 0 and 100', () => {
+    const temp = wrapper.vm.randomTemp();
+    expect(temp).toBeGreaterThanOrEqual(0);
+    expect(temp).toBeLessThanOrEqual(100);
+  });
+
+  it('updates the chart and temperature indicator every 2 seconds', async () => {
+    jest.useFakeTimers();
+    wrapper.vm.newTrace();
+    
+    // Fast-forward time
+    jest.advanceTimersByTime(2000);
+    
+    expect(Plotly.extendTraces).toHaveBeenCalled();
+    expect(Plotly.update).toHaveBeenCalled();
+    
+    // Check if currentTemp is updated
+    expect(wrapper.vm.currentTemp).toBeGreaterThanOrEqual(0);
+    expect(wrapper.vm.currentTemp).toBeLessThanOrEqual(100);
+    
+    // Fast-forward time to check if cnt increments
+    jest.advanceTimersByTime(2000);
+    expect(wrapper.vm.cnt).toBe(2);
+    
+    // Stop the polling after 1000 counts
+    wrapper.vm.cnt = 999; // Set cnt to 999 to test stopping
+    jest.advanceTimersByTime(2000);
+    expect(Plotly.relayout).toHaveBeenCalled();
+    expect(wrapper.vm.cnt).toBe(1000);
+    expect(wrapper.vm.polling).toBeNull(); // Check if polling is cleared
+  });
+});
