@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid>
+  <v-container class="pa-0 mt-3" fluid>
     <div ref="plotElement"></div>
     <div ref="Temp" style="margin-top: 5px"></div>
   </v-container>
@@ -20,7 +20,7 @@ export default {
         {
           y: [0],
           mode: 'lines+markers',
-          marker: { color: 'rgb(128, 0, 128)', size: 4 },
+          marker: { color: '#263238', size: 4 },
           line: { width: 1 },
           name: '2025',
         },
@@ -46,7 +46,7 @@ export default {
         },
       ],
       layout: {
-        xaxis: { title: 'sample title', range: [0, 50] },
+        xaxis: { title: 'Seconds', range: [0, 50] },
         yaxis: { title: 'Temperature °C', range: [0, 100] },
         title: 'Process Temperature Monitoring Screen',
       },
@@ -61,8 +61,6 @@ export default {
           },
           delta: { reference: 50 },
           value: 0,
-
-          // title: { text: 'Temperature' },
         },
       ],
       layoutTemp: {
@@ -91,15 +89,12 @@ export default {
      */
     newTrace() {
       this.polling = setInterval(() => {
-        // Generate a random temperature and update the graph
         this.currentTemp = this.randomTemp()
         Plotly.extendTraces(this.$refs.plotElement, { y: [[this.currentTemp]] }, [0])
         this.cnt++
 
-        // Update the indicator graph with the current temperature
         Plotly.update(this.$refs.Temp, { value: [this.currentTemp] }, [0])
 
-        // Adjust x-axis range for smooth scrolling
         if (this.cnt > 50) {
           Plotly.relayout(this.$refs.plotElement, {
             xaxis: {
@@ -109,7 +104,6 @@ export default {
           })
         }
 
-        // Stop plotting after 1000 points
         if (this.cnt >= 1000) {
           clearInterval(this.polling)
           console.log('Stopped plotting after reaching 1000 points.')
