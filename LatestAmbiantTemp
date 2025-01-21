@@ -232,3 +232,112 @@ describe('AmbientTemperature.vue', () => {
     expect(temp).toBeLessThanOrEqual(100);
   });
 });
+
+
+------
+
+// AmbientTemperature.spec.js
+import { shallowMount } from '@vue/test-utils';
+import AmbientTemperature from '@/components/AmbientTemperature.vue';
+import Plotly from 'plotly.js-dist';
+
+jest.mock('plotly.js-dist', () => ({
+  newPlot: jest.fn(),
+  extendTraces: jest.fn(),
+  update: jest.fn(),
+  relayout: jest.fn(),
+}));
+
+describe('AmbientTemperature.vue', () => {
+  let wrapper;
+
+  beforeEach(() => {
+    wrapper = shallowMount(AmbientTemperature, {
+      propsData: {
+        allTempData: [{ temp: 20 }, { temp: 25 }, { temp: 30 }],
+      },
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    clearInterval(wrapper.vm.polling); // Clear any intervals set in the component
+  });
+
+  it('renders correctly', () => {
+    expect(wrapper.exists()).toBe(true);
+    expect(wrapper.find('[ref="plotElement"]').exists()).toBe(true);
+    expect(wrapper.find('[ref="Temp"]').exists()).toBe(true);
+  });
+
+  it('calls renderChart on mount', () => {
+    const renderChartSpy = jest.spyOn(wrapper.vm, 'renderChart');
+    wrapper.vm.$mount();
+    expect(renderChartSpy).toHaveBeenCalled();
+  });
+
+  it('calls newTrace on mount', () => {
+    const newTraceSpy = jest.spyOn(wrapper.vm, 'newTrace');
+    wrapper.vm.$mount();
+    expect(newTraceSpy).toHaveBeenCalled();
+  });
+
+  it('updates the plot with new temperature data', async () => {
+    jest.useFakeTimers();
+    wrapper.vm.newTrace();
+
+    // Simulate the passage of time
+    jest.advanceTimersByTime(2000);
+    expect(Plotly.extendTraces).toHaveBeenCalledWith(
+      wrapper.vm.$refs.plotElement,
+      { y: [[20]] },
+      [0]
+    );
+    expect(Plotly.update).toHaveBeenCalledWith(
+      wrapper.vm.$refs.Temp,
+      { value: [20] },
+      [0]
+    );
+
+    // Advance time again to simulate the next data point
+    jest.advanceTimersByTime(2000);
+    expect(Plotly.extendTraces).toHaveBeenCalledWith(
+      wrapper.vm.$refs.plotElement,
+      { y: [[25]] },
+      [0]
+    );
+    expect(Plotly.update).toHaveBeenCalledWith(
+      wrapper.vm.$refs.Temp,
+      { value: [25] },
+      [0]
+    );
+
+    // Advance time again to simulate the next data point
+    jest.advanceTimersByTime(2000);
+    expect(Plotly.extendTraces).toHaveBeenCalledWith(
+      wrapper.vm.$refs.plotElement,
+      { y: [[30]] },
+      [0]
+    );
+    expect(Plotly.update).toHaveBeenCalledWith(
+      wrapper.vm.$refs.Temp,
+      { value: [30] },
+      [0]
+    );
+
+    // Clear the interval after testing
+    clearInterval(wrapper.vm.polling);
+  });
+
+  it('stops polling after reaching 1000 points', async () => {
+    jest.useFakeTimers();
+    wrapper.vm.cnt = 999; // Set cnt to 999 to simulate the next call
+    wrapper.vm.newTrace();
+
+    // Simulate the passage of time
+    jest.advanceTimersByTime(2000);
+    expect(wrapper.vm.cnt).toBe(1000);
+    expect(Plotly.extendTraces).toHaveBeenCalled();
+    expect(clearInterval).toHaveBeenCalledWith(wrapper.vm.polling);
+  });
+});
