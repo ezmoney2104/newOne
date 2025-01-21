@@ -1,0 +1,129 @@
+<template>
+  <v-container fluid>
+    <div ref="plotElement"></div>
+    <div ref="Temp" style="margin-top: 5px"></div>
+  </v-container>
+</template>
+
+<script>
+import Plotly from 'plotly.js-dist'
+
+export default {
+  name: 'AmbientTemperature',
+
+  props: {
+    allTempData: { type: Array, required: false },
+  },
+
+  data() {
+    return {
+      config: { responsive: true, displayModeBar: false },
+      cnt: 0,
+      currentTemp: 0,
+      arrayCounter: 0,
+      chartData: [
+        {
+          y: [0],
+          mode: 'lines+markers',
+          marker: { color: '#263238', size: 4 },
+          line: { width: 1 },
+          name: '2025',
+        },
+        {
+          x: [0, 1000],
+          y: [10, 10],
+          mode: 'line',
+          line: {
+            color: 'rgb(50, 171, 96)',
+            width: 4,
+          },
+          name: '10 °C',
+        },
+        {
+          x: [0, 1000],
+          y: [40, 40],
+          mode: 'line',
+          line: {
+            color: 'rgb(183, 28, 28)',
+            width: 4,
+          },
+          name: '40 °C',
+        },
+      ],
+      layout: {
+        xaxis: { title: 'Seconds', range: [0, 50] },
+        yaxis: { title: 'Temperature °C', range: [0, 100] },
+        title: 'Process Temperature Monitoring Screen',
+      },
+      tempData: [
+        {
+          type: 'indicator',
+          mode: 'number+gauge+delta',
+          gauge: {
+            shape: 'bullet',
+            steps: [{ range: [0, 100], color: 'lightgray' }],
+            axis: { range: [null, 100] },
+          },
+          delta: { reference: 50 },
+          value: 0,
+        },
+      ],
+      layoutTemp: {
+        height: 225,
+        title: 'Current Temperature',
+      },
+      polling: null,
+    }
+  },
+  mounted() {
+    this.renderChart()
+    this.newTrace()
+  },
+
+  methods: {
+    /**
+     * Initialize and display the Ambient Temperature Graph and Indicator
+     */
+    renderChart() {
+      Plotly.newPlot(this.$refs.plotElement, this.chartData, this.layout, this.config)
+      Plotly.newPlot(this.$refs.Temp, this.tempData, this.layoutTemp, this.config)
+    },
+
+    /**
+     * Update the Ambient Temperature Graph and Indicator
+     */
+    newTrace() {
+      this.polling = setInterval(() => {
+        this.currentTemp = this.allTempData[this.arrayCounter]?.temp
+        Plotly.extendTraces(this.$refs.plotElement, { y: [[this.currentTemp]] }, [0])
+        this.cnt++
+
+        Plotly.update(this.$refs.Temp, { value: [this.currentTemp] }, [0])
+
+        if (this.cnt > 50) {
+          Plotly.relayout(this.$refs.plotElement, {
+            xaxis: {
+              range: [this.cnt - 50, this.cnt],
+              title: 'Sample Title',
+            },
+          })
+        }
+        this.arrayCounter += 1
+
+        if (this.cnt >= 1000) {
+          clearInterval(this.polling)
+          console.log('Stopped plotting after reaching 1000 points.')
+        }
+      }, 2000)
+    },
+
+    /**
+     * Returns a random integer from 0 to 100
+     * @returns {integer} returns random integer
+     */
+    randomTemp() {
+      return Math.floor(Math.random() * 101)
+    },
+  },
+}
+</script>
