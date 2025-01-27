@@ -1,0 +1,70 @@
+Install Plotly and its dependencies.
+   
+        Task actions
+          
+      Convert to child item
+     Delete 
+
+        
+      
+ Please use Plotly and Bootstrap only.   
+        Task actions
+          
+      Convert to child item
+     Delete 
+
+        
+      
+ Note that SF did not use Vue-Plotly and Bootstrap-Vue   
+        Task actions
+          
+      Convert to child item
+     Delete 
+
+
+
+        
+      
+ Learn how Plotly operates within the Smart Factory context.   
+        Task actions
+          
+      Convert to child item
+     Delete 
+
+        
+      
+ Display three graphs on the board, each with an x-axis, a y-axis, and corresponding values.
+   
+        Task actions
+          
+      Convert to child item
+     Delete 
+
+ Graphs to be created are: 1 hourly (line), 1 daily (bar), 1 monthly (Pie).   
+        Task actions
+          
+      Convert to child item
+     Delete 
+
+
+
+        
+      
+ Use mock data for now.
+   
+        Task actions
+          
+      Convert to child item
+     Delete 
+
+        
+      
+ x axis for plan   
+        Task actions
+          
+      Convert to child item
+     Delete 
+
+        
+      
+ y axis for actual
