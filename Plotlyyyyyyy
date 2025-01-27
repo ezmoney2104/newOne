@@ -68,3 +68,70 @@ Install Plotly and its dependencies.
         
       
  y axis for actual
+
+
+
+------
+
+<template>
+  <div class="container mt-4">
+    <h2 class="text-center">Smart Factory Dashboard</h2>
+    <div class="row">
+      <div class="col-md-4" id="hourly-graph"></div>
+      <div class="col-md-4" id="daily-graph"></div>
+      <div class="col-md-4" id="monthly-graph"></div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Plotly from "plotly.js-dist";
+
+export default {
+  name: "Dashboard",
+  mounted() {
+    // Hourly Line Graph
+    const hourlyData = {
+      x: ["1 AM", "2 AM", "3 AM", "4 AM", "5 AM"],
+      y: [10, 15, 13, 17, 21],
+      type: "scatter",
+    };
+    Plotly.newPlot("hourly-graph", [hourlyData], {
+      title: "Hourly Data",
+      xaxis: { title: "Time (Hours)" },
+      yaxis: { title: "Actual Values" },
+    });
+
+    // Daily Bar Chart
+    const dailyData = {
+      x: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      y: [50, 60, 70, 80, 90],
+      type: "bar",
+    };
+    Plotly.newPlot("daily-graph", [dailyData], {
+      title: "Daily Data",
+      xaxis: { title: "Days" },
+      yaxis: { title: "Actual Values" },
+    });
+
+    // Monthly Pie Chart
+    const monthlyData = {
+      values: [300, 500, 700],
+      labels: ["Plan A", "Plan B", "Plan C"],
+      type: "pie",
+    };
+    Plotly.newPlot("monthly-graph", [monthlyData], {
+      title: "Monthly Data",
+    });
+  },
+};
+</script>
+
+<style>
+#hourly-graph,
+#daily-graph,
+#monthly-graph {
+  height: 300px;
+}
+</style>
+
